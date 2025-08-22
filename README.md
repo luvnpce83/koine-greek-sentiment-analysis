@@ -35,6 +35,10 @@ This study developed two primary models for different levels of textual analysis
     -   **Purpose**: To provide a broader sentiment overview, complementing the granular emotion analysis.
     -   **Status**: In development.
 
+The final model weights are not stored in this repository due to their size. They are publicly available on the Hugging Face Hub.
+
+Emotion Classifier: [YoungUnKang/ancient-greek-emotion-bert](https://huggingface.co/luvnpce83/ancient-greek-emotion-bert)
+
 ## 💾 Dataset
 
 The model was trained on a custom dataset of 2,616 annotated sentences in Koine Greek. The creation process involved:
