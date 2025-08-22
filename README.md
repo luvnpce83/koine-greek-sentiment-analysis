@@ -12,9 +12,8 @@ This repository contains the code, data, and fine-tuned models for the doctoral 
 ## 📂 Repository Structure
 
 -   **/data**: Contains the raw and processed datasets used for training.
-    -   `/raw`: The initial 884 samples curated from the Louw-Nida lexicon.
-    -   `/processed`: The final, augmented dataset of 2,616 samples.
--   **/models**: Stores the final fine-tuned model weights, ready for inference.
+    -   `raw`: The initial 884 samples curated from the Louw-Nida lexicon.
+    -   `processed`: The final, augmented dataset of 2,616 samples.
 -   **/src**: Includes all Python source code.
     -   `/augmentation`: Scripts for data augmentation (back-translation, generative).
     -   `/training`: Scripts for fine-tuning the models.
