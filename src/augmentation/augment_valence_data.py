@@ -11,11 +11,11 @@ from tqdm.asyncio import tqdm
 import asyncio
 
 # --- 1. 설정 (Configuration) ---
-SERVICE_ACCOUNT_KEY_FILE = "sentiment-analysis-469221-64e5ee43271c.json"
-MODEL_NAME = "gemini-1.5-flash"
-INPUT_CSV = "data/nt_train_seeds.csv"
-FINAL_OUTPUT_CSV = "data/augmented_nt_train.csv"
-CONCURRENT_REQUEST_LIMIT = 10
+SERVICE_ACCOUNT_KEY_FILE = "[Your_Key_File]" 
+MODEL_NAME = "gemini-2.5-flash"
+INPUT_CSV = "nt_train_seeds.csv"
+FINAL_OUTPUT_CSV = "augmented_nt_train.csv"
+CONCURRENT_REQUEST_LIMIT = 20
 
 # --- 2. GCP 인증 및 모델 설정 (Original, Stable Method) ---
 try:
@@ -27,7 +27,7 @@ except Exception as e:
     exit()
 
 # --- 3. Valence Regression을 위한 프롬프트 템플릿 ---
-BACK_TRANSLATE_PROMPT_1 = """Paraphrase the following Koine Greek sentence in modern English.
+BACK_TRANSLATE_PROMPT_1 = """Paraphrase the following Koine Greek sentence in modern English. 
 CRITICAL: Do not perform a literal, word-for-word translation. Instead, capture the core meaning and sentiment (positive/negative intensity) and express it using a completely different sentence structure.
 
 Koine Greek: "{text}"
@@ -72,10 +72,10 @@ async def process_row(row):
         prompt1 = BACK_TRANSLATE_PROMPT_1.format(text=text)
         paraphrased = await call_gemini_api_async(prompt1, temperature=0.9)
         if not paraphrased: return
-
+        
         prompt2 = BACK_TRANSLATE_PROMPT_2.format(intermediate_language=lang, translated_text=paraphrased)
         back_translated = await call_gemini_api_async(prompt2, temperature=0.7)
-
+        
         if back_translated and back_translated.strip() and back_translated.strip() != text.strip():
             augmented_results.append({'text': back_translated, 'valence_score': valence_score})
 
@@ -108,15 +108,15 @@ async def main():
 
     tasks = [process_row(row) for _, row in original_df.iterrows()]
     print(f"총 {len(original_df)}개 원본(seed) 항목에 대한 증강을 시작합니다...")
-
+    
     results = await tqdm.gather(*tasks, desc="Augmenting NT Training Seeds")
-
+    
     all_augmented_data = []
     for result in results:
         all_augmented_data.extend(result)
-
+        
     print(f"\n🎉 증강 완료! {len(all_augmented_data)}개의 새로운 데이터가 생성되었습니다.")
-
+    
     augmented_df = pd.DataFrame(all_augmented_data)
     final_df = pd.concat([original_df, augmented_df], ignore_index=True)
     final_df.drop_duplicates(subset=['text'], inplace=True)
