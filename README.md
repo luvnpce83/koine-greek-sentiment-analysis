@@ -3,7 +3,6 @@
 **Author**: Young Un Kang  
 **Affiliation**: College of Theology, Yonsei University
 
-[![Build Status](https://github.com/luvnpce83/koine-greek-sentiment-analysis/actions/workflows/main.yml/badge.svg)](https://github.com/luvnpce83/koine-greek-sentiment-analysis/actions/workflows/main.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 📖 Overview
