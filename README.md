@@ -26,7 +26,7 @@ This study developed two primary models for different levels of textual analysis
 
 1.  **Emotion Classifier**
     -   **Task**: An 8-class classifier for Plutchik's basic emotions (Joy, Trust, Fear, Surprise, Sadness, Disgust, Anger, Anticipation).
-    -   **Performance**: Achieved a **Macro F1 score of 0.660** on the validation set.
+    -   **Performance**: Achieved a **Macro F1 score of 0.626** on a strictly held-out validation set.
     -   **Status**: Complete. Model weights are available in `/models/emotion_classifier`.
 
 2.  **Valence Analyzer**
@@ -34,9 +34,9 @@ This study developed two primary models for different levels of textual analysis
     -   **Purpose**: To provide a broader sentiment overview, complementing the granular emotion analysis.
     -   **Status**: In development.
 
-The final model weights are not stored in this repository due to their size. They are publicly available on the Hugging Face Hub.
+The fine-tuned model is available on the Hugging Face Hub. This model was fine-tuned from the `pranaydeeps/Ancient-Greek-BERT` base model.
 
-Emotion Classifier: [YoungUnKang/ancient-greek-emotion-bert](https://huggingface.co/luvnpce83/ancient-greek-emotion-bert)
+Emotion Classifier: [YoungUnKang/ancient-greek-emotion-bert](https://huggingface.co/YoungUnKang/ancient-greek-emotion-bert)
 
 ## 💾 Dataset
 
@@ -60,7 +60,7 @@ The model was trained on a custom dataset of 2,616 annotated sentences in Koine 
 
 3.  **Install dependencies:**
     ```bash
-    pip install -r requirements.txt
+    pip install -r src/training/requirements.txt
     ```
 
 ## 🚀 Usage
@@ -92,7 +92,7 @@ Disgust: 0.0893
 
 ## 📊 Results
 
-The final emotion classification model achieved a **Macro F1 score of 0.660**, a highly competitive result that demonstrates the model's robust capability within the methodologically demanding domain of a low-resource ancient language.
+The final emotion classification model achieved a **Macro F1 score of 0.626**. This result was obtained using a rigorous evaluation protocol where the validation set was kept strictly separate from the data augmentation pipeline. This provides a more reliable measure of the model's ability to generalize to unseen data, a critical consideration in a low-resource ancient language context.
 
 For detailed logs, training curves, and a full history of all experiments, please refer to the project's [Weights & Biases workspace](https://wandb.ai/luvnpce-yonsei-university/huggingface/workspace?nw=nwuserluvnpce).
 
