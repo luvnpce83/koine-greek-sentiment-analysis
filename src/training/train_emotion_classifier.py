@@ -61,37 +61,57 @@ def main(args):
     
     # --- 3. Setup Paths and Directories ---
     local_data_path = './data/augmented_emotion_data.csv'
-    output_dir_name = f"lora_r{args.lora_r}_alpha{args.lora_r * 2}_epochs{args.epochs}_lr{args.learning_rate}"
+    output_dir_name = f"full-finetune_epochs{args.epochs}_lr{args.learning_rate}_seed{args.seed}"
     local_output_dir = os.path.join('./local_model_output', output_dir_name)
 
     if not os.path.exists(local_output_dir):
         os.makedirs(local_output_dir)
 
-    # --- 4. Prepare Dataset (No Changes) ---
-    print("--- Loading and Preparing Dataset ---")
-    df = pd.read_csv(local_data_path)
-    primary_labels = sorted(df['label'].unique().tolist())
+    # --- 4. Prepare Dataset (Leakage Corrected) ---
+    print("--- Loading and Preparing Dataset (Leakage Corrected) ---")
+    from sklearn.model_selection import train_test_split as sklearn_train_test_split
+
+    # Load original data to create a clean, un-augmented validation set
+    primary_df = pd.read_csv('./data/primary_emotion_data.csv')
+    augmented_df = pd.read_csv(local_data_path)
+
+    # Split the ORIGINAL data to get a clean, un-augmented validation set
+    primary_train_df, eval_df = sklearn_train_test_split(
+        primary_df,
+        test_size=0.2,
+        stratify=primary_df['label'],
+        random_state=args.seed
+    )
     
+    # The training set is the entire augmented dataset, MINUS the sentences reserved for evaluation
+    eval_texts = set(eval_df['text'])
+    train_df = augmented_df[~augmented_df['text'].isin(eval_texts)].copy()
+
+    print(f"Clean Split Complete: Train size={len(train_df)}, Eval size={len(eval_df)}")
+
+    primary_labels = sorted(augmented_df['label'].unique().tolist())
     label2id = {label: i for i, label in enumerate(primary_labels)}
     id2label = {i: label for i, label in enumerate(primary_labels)}
-    df['labels'] = df['label'].map(label2id)
     
-    final_dataset = Dataset.from_pandas(df[['text', 'labels']])
+    train_df['labels'] = train_df['label'].map(label2id)
+    eval_df['labels'] = eval_df['label'].map(label2id)
 
-    # --- 5. Tokenize and Split Data (No Changes) ---
-    print("--- Tokenizing and Splitting Data ---")
-    tokenizer = AutoTokenizer.from_pretrained("./ancient-greek-bert-local")
+    train_dataset = Dataset.from_pandas(train_df[['text', 'labels']])
+    eval_dataset = Dataset.from_pandas(eval_df[['text', 'labels']])
+
+    # --- 5. Tokenize Data ---
+    print("--- Tokenizing Data ---")
+    tokenizer = AutoTokenizer.from_pretrained("pranaydeeps/Ancient-Greek-BERT")
     
     def tokenize_function(examples):
         return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
     
-    tokenized_dataset = final_dataset.map(tokenize_function, batched=True)
-    tokenized_dataset = tokenized_dataset.cast_column("labels", ClassLabel(names=primary_labels))
+    train_dataset = train_dataset.map(tokenize_function, batched=True)
+    eval_dataset = eval_dataset.map(tokenize_function, batched=True)
     
-    train_test_split = tokenized_dataset.train_test_split(test_size=0.2, stratify_by_column="labels", seed=args.seed)
-    train_dataset = train_test_split["train"]
-    eval_dataset = train_test_split["test"]
-    
+    train_dataset = train_dataset.cast_column("labels", ClassLabel(names=primary_labels))
+    eval_dataset = eval_dataset.cast_column("labels", ClassLabel(names=primary_labels))
+
     # --- 6. Calculate Class Weights (No Changes) ---
     print("--- Calculating Class Weights ---")
     class_weights = compute_class_weight(
@@ -113,7 +133,7 @@ def main(args):
     # )
 
     model = AutoModelForSequenceClassification.from_pretrained(
-        "./ancient-greek-bert-local",
+        "pranaydeeps/Ancient-Greek-BERT",
         num_labels=len(primary_labels),
         label2id=label2id,
         id2label=id2label
