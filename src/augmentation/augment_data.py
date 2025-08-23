@@ -14,8 +14,8 @@ import asyncio
 # --- 1. 설정 (Configuration) ---
 SERVICE_ACCOUNT_KEY_FILE = "sentiment-analysis-469221-64e5ee43271c.json" 
 MODEL_NAME = "gemini-2.5-flash"
-INPUT_CSV = "primary_emotion_data.csv" # <--- 테스트 시 "test_data.csv"로 변경
-FINAL_OUTPUT_CSV = "augmented_dataset_final_v5.csv"
+INPUT_CSV = "data/primary_emotion_data.csv"
+FINAL_OUTPUT_CSV = "data/augmented_emotion_data.csv"
 LABEL_FOR_GENERATIVE = 'Surprise'
 LABEL_FOR_ENGLISH_ONLY_BACKTRANSLATION = 'Disgust'
 CONCURRENT_REQUEST_LIMIT = 20
@@ -37,12 +37,12 @@ Koine Greek: "{text}"
 English Paraphrase:"""
 
 # Revised with a strict output format instruction
-BACK_TRANSLATE_PROMPT_2 = """You are an expert scholar of Koine Greek. Take the following English paraphrase and express its meaning in Koine Greek, as if you were a different author from the same period.
+BACK_TRANSLATE_PROMPT_2 = """You are an expert scholar of Koine Greek. Take the following {intermediate_language} paraphrase and express its meaning in Koine Greek, as if you were a different author from the same period.
 CRITICAL: Avoid simple, direct translation. Use different vocabulary and grammatical structures to create a distinct but semantically equivalent sentence.
 The final style must be consistent with 1st-century New Testament Greek.
 CRITICAL OUTPUT FORMAT: Your response must contain ONLY the single Koine Greek sentence and nothing else. Do not add explanations, apologies, or any other text.
 
-English Paraphrase: "{translated_text}"
+{intermediate_language} Paraphrase: "{translated_text}"
 Koine Greek Expression:"""
 
 # Revised with a strict output format instruction
