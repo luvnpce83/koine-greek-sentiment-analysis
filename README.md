@@ -90,9 +90,26 @@ Disgust: 0.0893
 ...
 ```
 
+## 📊 Experiment Tracking & Visualization
+
+This project is integrated with [Weights & Biases](https://wandb.ai) for experiment tracking. All training scripts, including `train_emotion_classifier.py` and `train_valence_regressor.py`, will automatically log metrics, losses, and model performance to your `wandb` workspace.
+
+To use this feature:
+1.  **Sign up** for a free account at [wandb.ai](https://wandb.ai).
+2.  **Log in** from your terminal before running the training script:
+    ```bash
+    wandb login
+    ```
+    You will be prompted to enter the API key found in your `wandb` profile settings.
+3.  Once you are logged in, simply run the training script. The console output will include a link to view your experiment live.
+
+If you do not wish to use `wandb`, the training will still proceed normally, but no metrics will be logged online.
+
 ## 📊 Results
 
-The final emotion classification model achieved a **Macro F1 score of 0.626**. This result was obtained using a rigorous evaluation protocol where the validation set was kept strictly separate from the data augmentation pipeline. This provides a more reliable measure of the model's ability to generalize to unseen data, a critical consideration in a low-resource ancient language context.
+The final emotion classification model achieved a **Macro F1 score of 0.626**. The fine-tuned Valence Analyzer achieved a **Pearson correlation of ~0.64** on the primary in-domain test set, indicating a strong ability to predict sentiment trends.
+
+This result was obtained using a rigorous evaluation protocol where the validation set was kept strictly separate from the data augmentation pipeline. This provides a more reliable measure of the model's ability to generalize to unseen data, a critical consideration in a low-resource ancient language context.
 
 For detailed logs, training curves, and a full history of all experiments, please refer to the project's [Weights & Biases workspace](https://wandb.ai/luvnpce-yonsei-university/huggingface/workspace?nw=nwuserluvnpce).
 

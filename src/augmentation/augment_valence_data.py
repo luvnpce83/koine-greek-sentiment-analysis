@@ -11,7 +11,7 @@ from tqdm.asyncio import tqdm
 import asyncio
 
 # --- 1. 설정 (Configuration) ---
-SERVICE_ACCOUNT_KEY_FILE = "sentiment-analysis-469221-64e5ee43271c.json" 
+SERVICE_ACCOUNT_KEY_FILE = "[Your_Key_File]" 
 MODEL_NAME = "gemini-2.5-flash"
 INPUT_CSV = "nt_train_seeds.csv"
 FINAL_OUTPUT_CSV = "augmented_nt_train.csv"
@@ -93,7 +93,7 @@ async def process_row(row):
         back_translate_async(original_text, "Modern Greek"),
         generate_async(original_text, valence_score)
     ]
-        
+
     await asyncio.gather(*tasks)
     return augmented_results
 
