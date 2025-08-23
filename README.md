@@ -1,7 +1,7 @@
 # Emotions in the Identity of Paul: A Sentiment Analysis Approach to Paul’s Jewish Identity
 
 **Author**: Young Un Kang  
-**Affiliation**: The Graduate School, Yonsei University
+**Affiliation**: College of Theology, Yonsei University
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -36,7 +36,7 @@ This study developed two primary models for different levels of textual analysis
 
 The fine-tuned model is available on the Hugging Face Hub. This model was fine-tuned from the `pranaydeeps/Ancient-Greek-BERT` base model.
 
-Emotion Classifier: [YoungUnKang/ancient-greek-emotion-bert](https://huggingface.co/YoungUnKang/ancient-greek-emotion-bert)
+Emotion Classifier: [luvnpce83/ancient-greek-emotion-bert](https://huggingface.co/luvnpce83/ancient-greek-emotion-bert)
 
 ## 💾 Dataset
 
@@ -104,7 +104,7 @@ If you use the code or data from this project in your research, please cite the 
 @phdthesis{kang2025emotions,
   author    = {Kang, Young Un},
   title     = {Emotions in the Identity of Paul: A Sentiment Analysis Approach to Paul’s Jewish Identity},
-  school    = {The Graduate School, Yonsei University},
+  school    = {School of Theology, Yonsei University},
   year      = {2025}
 }
 ```
