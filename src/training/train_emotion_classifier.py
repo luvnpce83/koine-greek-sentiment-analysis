@@ -1,13 +1,13 @@
-# train_local.py (Corrected for RuntimeError)
+# train_emotion_classifier.py (final version)
 
 import pandas as pd
 import numpy as np
 import torch
 from datasets import Dataset, ClassLabel
 from transformers import (
-    AutoTokenizer, 
-    AutoModelForSequenceClassification, 
-    TrainingArguments, 
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+    TrainingArguments,
     Trainer,
     EarlyStoppingCallback
 )
@@ -32,11 +32,10 @@ class CustomTrainer(Trainer):
         outputs = model(**inputs)
         logits = outputs.get("logits")
         loss_fct = torch.nn.CrossEntropyLoss(weight=self.class_weights)
-        # 🎯 FIX: Corrected --1 to -1 for tensor reshaping
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
-# --- 2. Custom Metrics Function (No Changes) ---
+# --- 2. Custom Metrics Function ---
 def compute_metrics_custom(eval_pred):
     predictions, labels = eval_pred
     preds = np.argmax(predictions, axis=1)
@@ -60,7 +59,7 @@ def main(args):
     set_seed(args.seed)
     
     # --- 3. Setup Paths and Directories ---
-    local_data_path = './data/augmented_emotion_data.csv'
+    local_data_path = './data/emotion_data_augmented.csv'
     output_dir_name = f"full-finetune_epochs{args.epochs}_lr{args.learning_rate}_seed{args.seed}"
     local_output_dir = os.path.join('./local_model_output', output_dir_name)
 
@@ -71,11 +70,9 @@ def main(args):
     print("--- Loading and Preparing Dataset (Leakage Corrected) ---")
     from sklearn.model_selection import train_test_split as sklearn_train_test_split
 
-    # Load original data to create a clean, un-augmented validation set
-    primary_df = pd.read_csv('./data/primary_emotion_data.csv')
+    primary_df = pd.read_csv('./data/emotion_data_augmented.csv')
     augmented_df = pd.read_csv(local_data_path)
 
-    # Split the ORIGINAL data to get a clean, un-augmented validation set
     primary_train_df, eval_df = sklearn_train_test_split(
         primary_df,
         test_size=0.2,
@@ -83,7 +80,6 @@ def main(args):
         random_state=args.seed
     )
     
-    # The training set is the entire augmented dataset, MINUS the sentences reserved for evaluation
     eval_texts = set(eval_df['text'])
     train_df = augmented_df[~augmented_df['text'].isin(eval_texts)].copy()
 
@@ -104,7 +100,8 @@ def main(args):
     tokenizer = AutoTokenizer.from_pretrained("pranaydeeps/Ancient-Greek-BERT")
     
     def tokenize_function(examples):
-        return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
+        # 🟢 CHANGE: Use the max_length from args
+        return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=args.max_length)
     
     train_dataset = train_dataset.map(tokenize_function, batched=True)
     eval_dataset = eval_dataset.map(tokenize_function, batched=True)
@@ -112,7 +109,7 @@ def main(args):
     train_dataset = train_dataset.cast_column("labels", ClassLabel(names=primary_labels))
     eval_dataset = eval_dataset.cast_column("labels", ClassLabel(names=primary_labels))
 
-    # --- 6. Calculate Class Weights (No Changes) ---
+    # --- 6. Calculate Class Weights ---
     print("--- Calculating Class Weights ---")
     class_weights = compute_class_weight(
         class_weight='balanced',
@@ -122,24 +119,13 @@ def main(args):
     class_weights_tensor = torch.tensor(class_weights, dtype=torch.float)
     print(f"Calculated Class Weights: {class_weights_tensor}")
 
-    # --- 7. Configure LoRA and Load Model (No Changes) ---
-    # print(f"--- Configuring LoRA with r={args.lora_r} ---")
-    # peft_config = LoraConfig(
-    #     lora_alpha=args.lora_r * 2,
-    #     lora_dropout=0.1,
-    #     r=args.lora_r,
-    #     bias="none",
-    #     task_type=TaskType.SEQ_CLS,
-    # )
-
+    # --- 7. Load Model ---
     model = AutoModelForSequenceClassification.from_pretrained(
         "pranaydeeps/Ancient-Greek-BERT",
         num_labels=len(primary_labels),
         label2id=label2id,
         id2label=id2label
     )
-    # model = get_peft_model(model, peft_config)
-    # model.print_trainable_parameters()
 
     # --- 8. Define Training Arguments ---
     print("--- Defining Training Arguments ---")
@@ -173,26 +159,33 @@ def main(args):
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics_custom,
         class_weights=class_weights_tensor,
+        tokenizer=tokenizer, # 🟢 ADDITION: Pass tokenizer to Trainer
         callbacks=[EarlyStoppingCallback(early_stopping_patience=args.early_stopping_patience)]
     )
 
     trainer.train()
 
-    # --- 10. Save Final Model ---
-    print("--- Training complete. Saving final model. ---")
+    # --- 10. Save Final Model and Tokenizer ---
+    print("--- Training complete. Saving final model and tokenizer. ---")
+    # 🟢 CHANGE: This function now saves BOTH the model and the tokenizer
+    # associated with it in the specified directory.
     trainer.save_model(local_output_dir)
     wandb.finish()
-    print(f"🎉 Model and logs successfully saved to {local_output_dir}")
+    print(f"🎉 Model, tokenizer, and logs successfully saved to {local_output_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fine-tune Ancient Greek BERT with LoRA.")
+    parser = argparse.ArgumentParser(description="Fine-tune Ancient Greek BERT for Emotion Classification.")
     
-    parser.add_argument("--epochs", type=int, default=32, help="Maximum number of training epochs.")
-    parser.add_argument("--lora_r", type=int, default=16, help="The 'r' parameter for LoRA.")
+    parser.add_argument("--epochs", type=int, default=30, help="Maximum number of training epochs.")
     parser.add_argument("--learning_rate", type=float, default=5e-5, help="Learning rate for the optimizer.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
-    parser.add_argument("--early_stopping_patience", type=int, default=5, help="Stop training if f1_macro doesn't improve for this many epochs.")
+    parser.add_argument("--early_stopping_patience", type=int, default=3, help="Stop training if f1_macro doesn't improve for this many epochs.")
+    # 🟢 ADDITION: New argument for tokenizer max length
+    parser.add_argument("--max_length", type=int, default=512, help="Maximum sequence length for the tokenizer.")
     
+    # LoRA argument is kept but commented out in the main script logic
+    parser.add_argument("--lora_r", type=int, default=16, help="The 'r' parameter for LoRA (currently inactive in script).")
+
     args = parser.parse_args()
     
     try:
